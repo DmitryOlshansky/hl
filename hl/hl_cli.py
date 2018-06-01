@@ -20,12 +20,37 @@
 #
 # PS: HL is Python 3 but can be trivially ported to Python 2 if needed
 import hl
+import os
+
+# A few built-in entry points
+# TODO: make all of it configurable by user
 
 def main_list(args):
-    hl.query(args[1:], print)
+    hl.query(args, list_hosts)
+
+def main_ssh(args):
+    hl.query(args, run_ssh)
+
+
+def list_hosts(hosts):
+    for h in hosts:
+        print(h)
+
+def run_ssh(hosts):
+    if len(hosts) != 1:
+        print("Ambigious query, matches multiple hosts:")
+        for h in hosts:
+            print("  %s" % h.host)
+    else:
+        target = hosts[0]
+        cmd = "ssh %s" % hosts[0].host
+        print("SSH-ing to %s" % cmd)
+        os.execv("/usr/bin/env", ["ssh", hosts[0].host])
 
 # for quick tests
 if __name__ == "__main__":
     import sys
     if sys.argv[1] == "query":
-        hl.query(sys.argv[2:], print)
+        main_list(sys.argv[2:])
+    elif sys.argv[1] == "ssh":
+        main_ssh(sys.argv[2:])
