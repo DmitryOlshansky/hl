@@ -34,13 +34,13 @@ def main_ssh(args):
 
 def list_hosts(hosts):
     for h in hosts:
-        print(h)
+        print(h.host)
 
 def run_ssh(hosts):
     if len(hosts) != 1:
         print("Ambigious query, matches multiple hosts:")
         for h in hosts:
-            print("  %s" % h.host)
+            print("   %s" % h.host)
     else:
         target = hosts[0]
         cmd = "ssh %s" % hosts[0].host
@@ -54,3 +54,5 @@ if __name__ == "__main__":
         main_list(sys.argv[2:])
     elif sys.argv[1] == "ssh":
         main_ssh(sys.argv[2:])
+    else:
+        print("Unrecognized service: %s" % sys.argv[1])

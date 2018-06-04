@@ -1,11 +1,12 @@
 # HL support library usable for your own custom Host List tool (maybe GUI?)
 # See `hl` launcher for details
 #
+from collections import namedtuple, Counter
+import json
+import math
 import os
 import re
 import yaml
-import json
-from collections import namedtuple
 
 Token = namedtuple("Token", ["tk", "w"])
 
@@ -22,13 +23,15 @@ padded_host_pattern = re.compile(r'(.*)\[(\d+)-(\d+)\](.*)')
 # Python regex fails me:
 # \b doesn't break between 0-9 and a-z and look(ahead|behind) somehow doesn't fly
 #
-word_splitter = re.compile(r'-|_')
-boundary_replacement = re.compile(r'([a-z])([0-9])|([0-9])([a-z])')
+word_splitter = re.compile(r'-|_|\.')
+boundary_replacement = re.compile(r'(-|_|\.)([0-9])|([0-9])(-|_|\.)')
 
 # simple 2-pass regex-based tokenizer should work for the time being
 def tokenize(s):
     repl = boundary_replacement.sub(r'\1-\2', s)
     return word_splitter.split(repl)
+
+
 
 specs = {} # hierarchical spec of tags/hosts
 
@@ -73,10 +76,10 @@ class RecursiveBuilder(object):
     def build_recursive(self, spec, path = []):
         for tag, item in spec.items():
             if type(item) is dict and 'hosts' in item:
-                self.results.append((path, item))
+                self.results.append((path + [tag], item))
             elif type(item) is list:
                 for h in item:
-                    self.results.append((path, h))
+                    self.results.append((path + [tag], h))
             else:
                 self.build_recursive(item, path + [tag])
 
@@ -104,20 +107,45 @@ class Host(object):
         self.ports = ports
         self.tags = tags
         host_tokens = [Token(tk, 1) for tk in tokenize(host)]
-        tag_tokens = [Token(tags, (len(tags) - i) * 10) for i, tag in enumerate(tags)]
-        self.tokens = host_tokens + tag_tokens
+        tag_tokens = [Token(tag, (len(tags) - i) * 10) for i, tag in enumerate(tags)]
+        all_tokens = host_tokens + tag_tokens
+        normalized_tokens = {}
+        for tag, w in all_tokens:
+            if tag in normalized_tokens:
+                if normalized_tokens[tag] < w:
+                    normalized_tokens[tag] = w
+            else:
+                normalized_tokens[tag] = w
+        self.hw_vec = normalized_tokens
 
 hosts = [] # Hosts flattened from hierarchical spec
 for key, spec in specs.items():
     builder = RecursiveBuilder(key)
     hosts += builder.build_host_list(spec)
 
-def query(strings, callback):
-    # TODO: find best matches
-    #
+def sigmoid(w):
+    return (1 / (1 + math.exp(-w)) - 0.5)
+
+# query weighted vector ({tk: w}) vs host weighted vector ({tk : w})
+def weighted_similarity(qw_vec, hw_vec):
+    # TODO: do fuzzy matching of individual tokens by trigrams or smth
+    result = 0
+    for qtk, qw in qw_vec.items():
+        result += hw_vec.get(qtk, 0)*qw
+    return result
+    
+
+def collect_scores(strings):
     query_tokens = [tk for s in strings for tk in tokenize(s)]
-    for h in hosts:
-        vec = [token.w * (token.tk in query_tokens) for token in h.tokens]
-        raw_tk = [token.tk for token in h.tokens]
-        print(h.host, raw_tk, sum(vec))
-    callback(hosts)
+    q_freq_vec =  Counter(query_tokens)
+    qw_vec = dict([(tk, sigmoid(cnt)) for tk, cnt in q_freq_vec.items()])
+    return [(h, weighted_similarity(qw_vec,  h.hw_vec)) for h in hosts]
+
+def query(strings, callback):
+    scores = collect_scores(strings)
+    m = max(scores, key=lambda k: k[1])
+    filtered = []
+    for h, score in scores:
+        if score == m[1]:
+            filtered.append(h)
+    callback(filtered)
