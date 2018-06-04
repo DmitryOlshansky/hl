@@ -25,10 +25,9 @@ except:
     import hl
 
 import os
+import sys
 
-# A few built-in entry points
 # TODO: make all of it configurable by user
-
 # query list built-in
 def main_list():
     hl.query(sys.argv, list_hosts)
@@ -54,6 +53,11 @@ def list_hosts(hosts):
     for h in hosts:
         print(h.host)
 
+def trace_hosts(hosts):
+    for h in hosts:
+        vec = " ".join([("%s:%s" % (k,v)) for k,v in h.hw_vec.items()])
+        print("%-18s | %60s" % (h.host, vec))
+
 def run_ssh(hosts):
     if len(hosts) != 1:
         print("Ambigious query, matches multiple hosts:")
@@ -62,8 +66,7 @@ def run_ssh(hosts):
     else:
         target = hosts[0]
         cmd = "ssh %s" % hosts[0].host
-        print("SSH-ing to %s" % cmd)
-        os.execv("/usr/bin/env", ["ssh", hosts[0].host])
+        os.execv("/usr/bin/env", ["/usr/bin/env", "ssh", hosts[0].host])
 
 # for quick tests
 if __name__ == "__main__":
@@ -71,6 +74,8 @@ if __name__ == "__main__":
     if sys.argv[1] == "query":
         sys.argv = sys.argv[1:]
         main_list()
+    elif sys.argv[1] == "trace":
+        hl.query(sys.argv, trace_hosts)
     elif sys.argv[1] == "ssh":
         sys.argv = sys.argv[1:]
         main_ssh()

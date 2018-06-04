@@ -16,21 +16,20 @@ if not os.path.isdir(spec_home):
     try:
         os.makedirs(spec_home)
     except Exception as e:
-        print(e, output=os.stderr)
+        print(e)
         exit(1)
 
 padded_host_pattern = re.compile(r'(.*)\[(\d+)-(\d+)\](.*)')
 # Python regex fails me:
-# \b doesn't break between 0-9 and a-z and look(ahead|behind) somehow doesn't fly
-#
+# \b doesn't break between 0-9 and a-z and zero-width look(ahead|behind) somehow doesn't fly
 word_splitter = re.compile(r'-|_|\.')
-boundary_replacement = re.compile(r'(-|_|\.)([0-9])|([0-9])(-|_|\.)')
+boundary_replacement = re.compile(r'([a-z_.-])([0-9])|([0-9])([a-z_.-])')
 
 # simple 2-pass regex-based tokenizer should work for the time being
 def tokenize(s):
-    repl = boundary_replacement.sub(r'\1-\2', s)
-    return word_splitter.split(repl)
-
+    repl = boundary_replacement.sub(r'\1\3-\2\4', s)
+    tks = filter(lambda x: len(x) != 0, word_splitter.split(repl))
+    return tks
 
 specs = {} # hierarchical spec of tags/hosts
 
