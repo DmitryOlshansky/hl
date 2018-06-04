@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="hl",
-    version="0.1.2",
+    version="0.1.8",
     author="Dmitry Olshansky",
     author_email="dmitry@olshansky.me",
     description="HL - Host List, a simple flexible fuzzy search/execute tool for lists of hosts",
@@ -14,7 +14,11 @@ setuptools.setup(
     url="https://github.com/pypa/example-project",
     packages=setuptools.find_packages(),
     entry_points = {
-        'console_scripts': ['hl=hl_command_line:main_list'],
+        'console_scripts': [
+            'hl=hl.hl_cli:main_list',
+            'hl-ssh=hl.hl_cli:main_ssh',
+            'hl-config=hl.hl_cli:main_config'
+        ]
     },
     classifiers=(
         "Programming Language :: Python :: 3",

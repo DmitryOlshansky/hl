@@ -32,7 +32,6 @@ def tokenize(s):
     return word_splitter.split(repl)
 
 
-
 specs = {} # hierarchical spec of tags/hosts
 
 for root, dir, files in os.walk(spec_home):
@@ -133,7 +132,6 @@ def weighted_similarity(qw_vec, hw_vec):
     for qtk, qw in qw_vec.items():
         result += hw_vec.get(qtk, 0)*qw
     return result
-    
 
 def collect_scores(strings):
     query_tokens = [tk for s in strings for tk in tokenize(s)]

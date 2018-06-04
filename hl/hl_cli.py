@@ -19,18 +19,36 @@
 #
 #
 # PS: HL is Python 3 but can be trivially ported to Python 2 if needed
-import hl
+try:
+    from hl import hl
+except:
+    import hl
+
 import os
 
 # A few built-in entry points
 # TODO: make all of it configurable by user
 
-def main_list(args):
-    hl.query(args, list_hosts)
+# query list built-in
+def main_list():
+    hl.query(sys.argv, list_hosts)
 
-def main_ssh(args):
-    hl.query(args, run_ssh)
+# ssh built-in
+def main_ssh():
+    hl.query(sys.argv, run_ssh)
 
+# TODO: config all aspects of HL utility
+# register/unregister new service command to hl as `hl-<service-name>`
+# - enable/disable
+# hl-config project name (enable|disable|default)
+# 
+# hl-config service add name @args 
+# hl-config service rm name
+# hl-config service list
+#
+def main_config():
+    args = sys.argv
+    print("Config section %s args: %s" % (args[0], args[1:]))
 
 def list_hosts(hosts):
     for h in hosts:
@@ -51,8 +69,14 @@ def run_ssh(hosts):
 if __name__ == "__main__":
     import sys
     if sys.argv[1] == "query":
-        main_list(sys.argv[2:])
+        sys.argv = sys.argv[1:]
+        main_list()
     elif sys.argv[1] == "ssh":
-        main_ssh(sys.argv[2:])
+        sys.argv = sys.argv[1:]
+        main_ssh()
+    elif sys.argv[1] == "config":
+        sys.argv = sys.argv[1:]
+        main_config()
     else:
+        # TODO: use argv[0] to determine the service to call
         print("Unrecognized service: %s" % sys.argv[1])
