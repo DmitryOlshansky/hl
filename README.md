@@ -71,4 +71,4 @@ Algorithm is simple (subject to change) - first we traverse the graph of host pa
 
 Query is tokenized in the same way as hostnames. After that the two frequency dictionaries are multipled like sparse vectors, to minimize sharp effect of repeated words, weights in query is smoothed by sigmoid (this will likely change in the future).
 
-Next step is to use trigramms of simliar to fix typos in query and still find closest token to match.
+Next step is to use trigramms or similar to fix typos in query and still find closest token to match.
