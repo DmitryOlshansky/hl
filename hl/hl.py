@@ -126,7 +126,13 @@ def sigmoid(w):
 
 # query weighted vector ({tk: w}) vs host weighted vector ({tk : w})
 def weighted_similarity(qw_vec, hw_vec):
-    # TODO: do fuzzy matching of individual tokens by trigrams or smth
+    # TODO:
+    # 1. Do fuzzy matching of individual tokens by trigrams or smth 
+    # 2. Another idea: Levenstain distance
+    # Score multiplier could be:
+    # (n - d)^2 / n^2 / d^2
+    # where d is distance or number of mismatched trigrams
+    # n is number of chars or trigrams depending on choosen strategy
     result = 0
     for qtk, qw in qw_vec.items():
         result += hw_vec.get(qtk, 0)*qw

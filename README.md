@@ -14,7 +14,7 @@ pip install --user hl
 
 ## Example
 
-Iamginary config for simple project with API and DBs, having 2 environments - staging on AWS and production on bare metal in 2 DCs. Note that admins are funky and DB have their own unique and inconsistent names + different ports, that we want to classify properly our with tags.
+Imaginary config for simple project with API and DBs, having 2 environments - staging on AWS and production on bare metal in 2 DCs. Note that admins are funky and DB have their own unique and inconsistent names + different ports, that we want to classify properly our with tags.
 
 
 ```yml

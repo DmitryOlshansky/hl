@@ -1,24 +1,44 @@
 #!/usr/bin/env python3
 #
-# HL is a multicall script, depending on name hl tool does:
-# hl query                           | list hosts by query
-# hl-all query                       | find hosts and list protocols, tab separated
-# hl-ssh query                       | ssh to the single matching host in query, error if ambigious
-# hl-pssh query -- command line      | pssh 
-# hl-<tool-name> query               | run tool using pattern from hl config
+# HL is a multicall script. 
+# hl-db manages configuration, adds/removes hosts,
+# (any is useful for $(hl --any "abc") substitutions)
+# hl [--any] <query>
+# hl --app [--opt1=xyz --opt2=kws]] <query>
 #
-# Host lists are looked up as YAML here:
+# Import from Ansible and optionally set tags + key value pairs ==
+# hl-db import [--tags=tag1,tag2,.] [--kv=key1:value1,key2:value2..] 'pattern' inventory-file 
 #
-# ~/.config/hl/<project>.yml         | project name is just another tag (with highest weight)
+# Export as Ansible inventory file, key value pairs are written, tags are not ==
+# hl-db export <query> [inventory-file]
 #
-# Same host lists can be in JSON:
-# ~/.config/hl/<project>.json        | same semantics as YML lists
+# Register git remote for your local HL database
+# hl-db remote [git-remote] 
+# Push changes to remote server
+# hl-db push
+# Pull changes from remote server
+# hl-db pull
 #
-# Configs of HL itself:              | 
-# ~/.config/hl/*.conf                | also use YAML syntax but .conf extension
+# Checkout new branch, unlike git cmd-line tool this 
+# creates skeleton DB for new branch if it doesn't exists
+# hl-db checkout <branch-name>
+#
+# For advanced users - allows to switch branches
+# hl-db git [commands]
+#
+# git reset --hard HEAD~1
+# hl-db undo
+
+
+# hl --ssh query                     | ssh to the single matching host in query, error if ambigious
+# hl --ssh --any query               | ssh to any of the best matching hosts
+# hl --pssh --cmd=command query      | pssh to all of best matching hosts and execute a command
+# hl --cqlsh query                   | connect via cqlsh
+#
+# Use curl to the best matching hosts the using 'http' key, err if not found or ambigious
+# hl --http [--opts=...] <query>/path-to-resource 
 #
 #
-# PS: HL is Python 3 but can be trivially ported to Python 2 if needed
 try:
     from hl import hl
 except:
@@ -27,36 +47,6 @@ except:
 import os
 import sys
 
-# TODO: make all of it configurable by user
-# query list built-in
-def main_list():
-    hl.query(sys.argv, list_hosts)
-
-# ssh built-in
-def main_ssh():
-    hl.query(sys.argv, run_ssh)
-
-# TODO: config all aspects of HL utility
-# register/unregister new service command to hl as `hl-<service-name>`
-# - enable/disable
-# hl-config project name (enable|disable|default)
-# 
-# hl-config service add name @args 
-# hl-config service rm name
-# hl-config service list
-#
-def main_config():
-    args = sys.argv
-    print("Config section %s args: %s" % (args[0], args[1:]))
-
-def list_hosts(hosts):
-    for h in hosts:
-        print(h.host)
-
-def trace_hosts(hosts):
-    for h in hosts:
-        vec = " ".join([("%s:%s" % (k,v)) for k,v in h.hw_vec.items()])
-        print("%-18s | %60s" % (h.host, vec))
 
 def run_ssh(hosts):
     if len(hosts) != 1:
@@ -74,14 +64,9 @@ if __name__ == "__main__":
     if sys.argv[1] == "query":
         sys.argv = sys.argv[1:]
         main_list()
-    elif sys.argv[1] == "trace":
-        hl.query(sys.argv, trace_hosts)
     elif sys.argv[1] == "ssh":
         sys.argv = sys.argv[1:]
         main_ssh()
-    elif sys.argv[1] == "config":
-        sys.argv = sys.argv[1:]
-        main_config()
     else:
         # TODO: use argv[0] to determine the service to call
         print("Unrecognized service: %s" % sys.argv[1])
