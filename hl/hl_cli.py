@@ -12,6 +12,8 @@
 # Export as Ansible inventory file, key value pairs are written, tags are not ==
 # hl-db export <query> [inventory-file]
 #
+# hl-db rm <query>
+#
 # Register git remote for your local HL database
 # hl-db remote [git-remote] 
 # Push changes to remote server
