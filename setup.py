@@ -15,9 +15,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points = {
         'console_scripts': [
-            'hl=hl.hl_cli:main_list',
-            'hl-ssh=hl.hl_cli:main_ssh',
-            'hl-config=hl.hl_cli:main_config'
+            'hl=hl.hl_cli:main_entry',
+            'hl-db=hl.hl_cli:db_entry'
         ]
     },
     classifiers=(
