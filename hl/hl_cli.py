@@ -5,7 +5,7 @@
 # hl-db manages configuration, adds/removes hosts,
 #
 # Manually add a host(s) to db
-# hl-db add --tags=tag1,tag2 --kev=key1:value1,key2:values hostname1 hostname2 ...
+# hl-db add --tags=tag1,tag2 --kv=key1:value1,key2:values hostname1 hostname2 ...
 # 
 # Import from Ansible and optionally set tags + key value pairs ==
 # hl-db import [--tags=tag1,tag2,.] [--kv=key1:value1,key2:value2..] 'pattern' inventory-file 
@@ -52,9 +52,32 @@ from hl import search
 import os
 import subprocess
 import sys
+import pystache
+from itertools import takewhile
 
 def process_flags(args):
-    pass
+    def parse(flag):
+        parts = flag.split("=")
+        if len(parts) == 1:
+            return flag
+        else:
+            pieces = parts[1].split(",")
+            if len(pieces) == 1:
+                return { parts[0] : parts[1] }
+            else:
+                pairs = [p.split(":") for p in pieces]
+                if all([len(p) == 1 for p in pairs]):
+                    return { parts[0] : pieces }
+                elif all([len(p) == 2 for p in pairs]):
+                    kv = {}
+                    for p in pairs:
+                        kv[p[0]] = kv[p[1]]
+                    return { parts[0] : kv }
+                else:
+                    print("Error in key-value flag {}, mixed array and k-v syntax", flag)
+    flags = [x.lstrip(["-"]) for x in takewhile(lambda s: s.startswith("-"), args)]
+    parsed = [parse(f) for f in flags]
+    return parsed, args[len(flags):]
 
 def add_host(base, flags, args):
     hosts = [{ 'host' : h, 'tags' : [], 'kv': {} } for h in args]
@@ -67,7 +90,18 @@ def import_from_ansible(base, flags, args):
     print(out)
 
 def main_entry(args):
-    pass
+    base = db.init(os.getenv("HOME"))
+    flags, args = process_flags(args)
+    app = base.app(flags[0]) if len(flags) > 0 else None
+    pattern = args[0]
+
+    flags, args = process_flags(args[1:])
+    if app == None:
+        print(base.select(pattern))
+    else:
+        kw = app['defaults'].copy().update()
+        cmd = pystache.render(app['single'], kw)
+        os.system(cmd)
 
 def db_entry(args):
     base = db.init(os.getenv("HOME"))

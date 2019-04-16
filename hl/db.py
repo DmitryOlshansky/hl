@@ -4,6 +4,7 @@ import json
 from hl import search
 
 #TODO: write files in $TEMP, then atomically update
+#TODO: checkpoint every .save() as git commit
 
 #skeleton for HL DB
 def skeleton():
@@ -20,8 +21,9 @@ def skeleton():
         'http.json' :
         """
             { 
-                "single" : "curl {{host}}:{{http_port}}/{{path}}",
+                "single" : "curl {{proto}}://{{host}}:{{http_port}}/{{path}}",
                 "defaults" : {
+                    "proto" : "http",
                     "http_port" : 22
                 }
             }
