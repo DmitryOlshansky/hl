@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from hl import search
+from hl import hlist
 
 #TODO: write files in $TEMP, then atomically update
 #TODO: checkpoint every .save() as git commit
@@ -12,7 +13,7 @@ def skeleton():
         'ssh.json' :
         """
             { 
-                "single" : "ssh -p {{ssh_port}} {{host}} {{#cmd}}{{cmd}}{{/cmd}}",
+                "single" : "ssh -p {{{ssh_port}}} {{{host}}} {{#cmd}}{{{cmd}}}{{/cmd}}",
                 "defaults" : {
                     "ssh_port" : 22
                 }
@@ -21,7 +22,7 @@ def skeleton():
         'http.json' :
         """
             { 
-                "single" : "curl {{proto}}://{{host}}:{{http_port}}/{{path}}",
+                "single" : "curl {{{proto}}}://{{{host}}}:{{{http_port}}}/{{{path}}}",
                 "defaults" : {
                     "proto" : "http",
                     "http_port" : 22
@@ -51,47 +52,35 @@ class Db(object):
             #TODO: git init
         else:
             self.apps = {}
-            for _, _, name in os.walk(self.appsdir):
-                if name[-5:] == '.json':
-                    cmd = name[-5:]
-                    with open(os.path.join(self.appsdir, name)) as f:
-                        self.apps[cmd] = json.loads(f.read())
-        self.hosts = []
+            for _, _, names in os.walk(self.appsdir):
+                for name in names:
+                    if name[-5:] == '.json':
+                        cmd = name[:-5]
+                        with open(os.path.join(self.appsdir, name)) as f:
+                            self.apps[cmd] = json.loads(f.read())
         try:
             with open(self.hosts_path) as f:
-                for line in f.readlines():
-                    #TODO: validate JSON structure!
-                    self.hosts.append(json.loads(line))
+                self.hosts = hlist.HList(f.read())
         except OSError:
             print("No hosts found at {}, creating new DB.", self.hosts_path, file=sys.stderr)
-            pass
+            self.hosts = hlist.HList()
 
-    def save(self):
-        # SAVE hosts
+    def save_hosts(self):
         with open(self.hosts_path, 'w') as f:
-            for h in self.hosts:
-                f.write(json.dumps(h)+"\n")
+            f.write(str(self.hosts))
         # TODO: git commit
 
-    """
-        Adds or replace one properly structured host entry
-    """
-    def add_host(self, host):
-        for i in range(len(self.hosts)):
-            if self.hosts[i] == host:
-                self.hosts[i] = host
-                return
-        self.hosts.append(host)
-    
-    # TODO:
-    def remove_by_query(self, query):
-        pass
-    
-    """
-        Returns indices of best matching host entries
-    """
-    def select(self, query):
-        qt = search.terms(query)
-        hts = [search.terms(h['host']) for h in self.hosts]
-        scores = [search.score(qt, ht) for ht in hts]
+    def app(self, name):
+        return self.apps[name]
 
+    """
+        Add from path
+    """
+    def add_app(self, path):
+        # TODO: git commit
+        pass
+
+
+    def rm_app(self, name):
+        # TODO: git commit
+        pass

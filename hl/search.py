@@ -22,15 +22,6 @@ def tokenize(text):
 		pieces.append(text[j:i])
 	return pieces
 
-
-def test_tokenize():
-	assert(tokenize("app.cloud.tld") == ['app', 'cloud', 'tld'])
-	assert(tokenize("..cloud...s") == ['cloud', 's'])
-	assert(tokenize("abc-s-") == ['abc', 's'])
-	assert(tokenize("monkey01.m1") == ['monkey', '01', 'm', '1'])
-	assert(tokenize("1-22") == ["1", "22"])
-	assert(tokenize("a1b") == ["a", "1", "b"])
-
 """Bag OF Words - bofw"""
 def to_bofw(tokens):
 	kv = {}
@@ -38,12 +29,14 @@ def to_bofw(tokens):
 		kv[tk] = kv.get(tk, 0) + 1
 	return kv
 
-
-def test_bofw():
-	assert(to_bofw(["a", "a", "b", "c"]) == { "a" : 2, "b" : 1, "c" : 1})
-
 def terms(s):
 	return to_bofw(tokenize(s))
+
+def terms_from_tags(tags):
+	kv = {}
+	for t in tags:
+		kv[t] = 512
+	return kv
 
 """Score of query bofw vs document bofw"""
 def score(qtk, htk):
@@ -55,9 +48,3 @@ def score(qtk, htk):
 			result += 1 + math.log(v, 2)
 	return result
 
-def test_score():
-	q = {"a" : 1, "b": 2, "c" : 3}
-	doc = { "b": 2 }
-	assert(score(q, doc) == 2)
-	q = { "a" : 3, "c" : 1}
-	assert(score(q, doc) == 0)

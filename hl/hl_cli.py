@@ -75,54 +75,52 @@ def process_flags(args):
                     return { parts[0] : kv }
                 else:
                     print("Error in key-value flag {}, mixed array and k-v syntax", flag)
-    flags = [x.lstrip(["-"]) for x in takewhile(lambda s: s.startswith("-"), args)]
+    flags = [x.lstrip("-") for x in takewhile(lambda s: s.startswith("-"), args)]
     parsed = [parse(f) for f in flags]
     return parsed, args[len(flags):]
 
 def add_host(base, flags, args):
     hosts = [{ 'host' : h, 'tags' : [], 'kv': {} } for h in args]
     for h in hosts:
-        base.add_host(h)
-    base.save()
+        base.hosts.add(h)
+    base.save_hosts()
 
 def import_from_ansible(base, flags, args):
-    out = subprocess.run(["/usr/bin/env", "ansible", "--list-hosts", "-i", args[3], args[2]], check=True)
+    out = subprocess.run(["/usr/bin/env", "ansible", "--list-hosts", "-i", args[1], args[0]], check=True)
     print(out)
 
 def main_entry(args):
     base = db.init(os.getenv("HOME"))
     flags, args = process_flags(args)
+    #TODO: `--any` and `--all` handling
     app = base.app(flags[0]) if len(flags) > 0 else None
+    if len(args) == 0: 
+        for h in base.hosts.hosts:
+            print(h['host'])
+        return
     pattern = args[0]
-
-    flags, args = process_flags(args[1:])
     if app == None:
-        print(base.select(pattern))
+        for host in base.hosts.list(pattern):
+            print(host['host'])
     else:
-        kw = app['defaults'].copy().update()
-        cmd = pystache.render(app['single'], kw)
+        flags, args = process_flags(args[1:])
+        #TODO: use extra k-v from command line
+        hosts = base.hosts.list(pattern)
+        kv = app['defaults'].copy()
+        kv.update(hosts[0]['kv'])
+        kv.update({ 'host' : hosts[0]['host'] })
+        cmd = pystache.render(app['single'], kv)
         os.system(cmd)
 
 def db_entry(args):
     base = db.init(os.getenv("HOME"))
-    flags = [] # TODO: extract all leading '--flag'
     handlers = {
         'add' : add_host,
         'import': import_from_ansible,
     }
-    handlers[args[0]](base, flags, args[1:])
-
-
-# for quick tests
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("No first argument provided, expected hl or hl-db", file=sys.stderr)
-        sys.exit(1)
-    tool = sys.argv[1]
-    if tool == "hl":
-        main_entry(sys.argv[2:])
-    elif tool == "hl-db":
-        db_entry(sys.argv[2:])
-    else:
-        print("Use hl or hl-db as first argument.", file=sys.stderr)
-        sys.exit(1)
+    if len(args) == 0 and not args[0] in handlers.keys():
+        print("Expected any of (%s) as first argument" % ", ".join(handlers.keys()))
+        exit(1)
+    cmd = args[0]
+    flags, args = process_flags(args[1:])
+    handlers[cmd](base, flags, args)
