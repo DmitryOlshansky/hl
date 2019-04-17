@@ -89,7 +89,8 @@ def import_from_ansible(base, flags, args):
     out = subprocess.run(["/usr/bin/env", "ansible", "--list-hosts", "-i", args[1], args[0]], check=True)
     print(out)
 
-def main_entry(args):
+def main_entry():
+    args = sys.argv[1:]
     base = db.init(os.getenv("HOME"))
     flags, args = process_flags(args)
     #TODO: `--any` and `--all` handling
@@ -112,7 +113,8 @@ def main_entry(args):
         cmd = pystache.render(app['single'], kv)
         os.system(cmd)
 
-def db_entry(args):
+def db_entry():
+    args = sys.argv[1:]
     base = db.init(os.getenv("HOME"))
     handlers = {
         'add' : add_host,

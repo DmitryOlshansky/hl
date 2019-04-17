@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="hl",
-    version="0.1.10",
+    version="0.2.0a",
     author="Dmitry Olshansky",
     author_email="dmitry@olshansky.me",
     description="HL - Host List, a simple flexible fuzzy search/execute tool for lists of hosts",
