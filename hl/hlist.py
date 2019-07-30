@@ -14,7 +14,7 @@ class HList(object):
         if not nd_json:
             self.hosts = []
         else:
-            self.hosts = [json.loads(line) for line in nd_json.split("\n")]
+            self.hosts = [json.loads(line) for line in nd_json.split("\n") if line.strip() != '']
             for h in self.hosts: check_host(h)
 
     def __str__(self):
@@ -46,9 +46,11 @@ class HList(object):
         return [self.hosts[i] for i in self.select(query)]
 
     """
-        Returns indices of best matching host entries
+        Return indices of best matching host entries
     """
     def select(self, query):
+        if query == "":
+            return range(len(self.hosts))
         if len(self.hosts) == 0:
             return []
         qt = search.terms(query)
